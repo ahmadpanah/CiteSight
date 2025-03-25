@@ -108,11 +108,29 @@ const AuthorProfile = {
     }
   },
   methods: {
+    getAbstractPreview(abstractIndex) {
+      if (!abstractIndex) return '';
+      
+      // Convert inverted index to text
+      const words = Object.keys(abstractIndex);
+      let abstract = new Array(Math.max(...Object.values(abstractIndex).flat())).fill('');
+      
+      words.forEach(word => {
+        abstractIndex[word].forEach(position => {
+          abstract[position - 1] = word;
+        });
+      });
+      
+      // Join words and limit length
+      const fullText = abstract.join(' ');
+      return fullText.length > 300 ? fullText.substring(0, 300) + '...' : fullText;
+    },
+
     async fetchAuthorData() {
       try {
         const response = await axios.get(`https://api.openalex.org/authors/${this.authorId}`, {
-          params: {
-            'mailto': CONFIG.OPENALEX_EMAIL
+          headers: {
+            'User-Agent': `CiteSight/${CONFIG.OPENALEX_EMAIL}`
           }
         });
         this.author = response.data;
@@ -131,8 +149,10 @@ const AuthorProfile = {
             filter: `author.id:${this.authorId}`,
             sort: 'publication_date:desc',
             per_page: this.perPage,
-            page: this.page,
-            'mailto': CONFIG.OPENALEX_EMAIL
+            page: this.page
+          },
+          headers: {
+            'User-Agent': `CiteSight/${CONFIG.OPENALEX_EMAIL}`
           }
         });
         
@@ -148,27 +168,29 @@ const AuthorProfile = {
     },
     async fetchYearlyStats() {
       try {
-        // First fetch works count by year
-        const worksResponse = await axios.get('https://api.openalex.org/works', {
-          params: {
-            filter: `author.id:${this.authorId}`,
-            group_by: 'publication_year',
-            per_page: 100,
-            'mailto': CONFIG.OPENALEX_EMAIL
-          }
-        });
+        const [worksResponse, citationsResponse] = await Promise.all([
+          axios.get('https://api.openalex.org/works', {
+            params: {
+              filter: `author.id:${this.authorId}`,
+              group_by: 'publication_year',
+              per_page: 100
+            },
+            headers: {
+              'User-Agent': `CiteSight/${CONFIG.OPENALEX_EMAIL}`
+            }
+          }),
+          axios.get('https://api.openalex.org/works', {
+            params: {
+              filter: `author.id:${this.authorId}`,
+              group_by: 'publication_year',
+              per_page: 100
+            },
+            headers: {
+              'User-Agent': `CiteSight/${CONFIG.OPENALEX_EMAIL}`
+            }
+          })
+        ]);
 
-        // Then fetch citations by year
-        const citationsResponse = await axios.get('https://api.openalex.org/works', {
-          params: {
-            filter: `author.id:${this.authorId}`,
-            group_by: 'publication_year',
-            select: 'cited_by_count',
-            per_page: 100,
-            'mailto': CONFIG.OPENALEX_EMAIL
-          }
-        });
-        
         const currentYear = new Date().getFullYear();
         const lastTenYears = Array.from({length: 10}, (_, i) => currentYear - i).reverse();
         
