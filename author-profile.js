@@ -1,6 +1,6 @@
 const AuthorProfile = {
   template: `
-    <div class="author-profile" v-if="author">
+    <div class="author-profile" v-if="author" @scroll="handleScroll">
       <div class="profile-header">
         <div class="profile-main">
           <h2>{{ author.display_name }}</h2>
@@ -46,22 +46,37 @@ const AuthorProfile = {
         </div>
       </div>
 
-      <div v-if="works.length" class="recent-works">
+      <div v-if="works.length" class="recent-works" @scroll="handleScroll">
         <h3>Recent Publications</h3>
         <ul class="works-list">
           <li v-for="work in works" :key="work.id" class="work-item">
             <div class="work-content">
               <h4>{{ work.title }}</h4>
               <div class="work-meta">
-                <span class="work-year">{{ work.publication_year }}</span>
-                <span class="work-type">{{ work.type }}</span>
-                <span v-if="work.cited_by_count" class="work-citations">
+                <span class="work-badge year">
+                  <span class="icon">📅</span>
+                  {{ work.publication_year }}
+                </span>
+                <span class="work-badge type">
+                  <span class="icon">📄</span>
+                  {{ work.type }}
+                </span>
+                <span v-if="work.cited_by_count" class="work-badge citations">
+                  <span class="icon">🏆</span>
                   {{ work.cited_by_count }} citations
                 </span>
+              </div>
+              <p v-if="work.abstract_inverted_index" class="work-abstract">
+                {{ getAbstractPreview(work.abstract_inverted_index) }}
+              </p>
+              <div class="work-journal" v-if="work.primary_location?.source?.display_name">
+                {{ work.primary_location.source.display_name }}
               </div>
             </div>
           </li>
         </ul>
+        <div v-if="loading" class="loading-more">Loading more publications...</div>
+        <div v-if="!hasMore && works.length" class="no-more">No more publications to load</div>
       </div>
     </div>
   `,
@@ -78,7 +93,11 @@ const AuthorProfile = {
       yearlyStats: {
         works: {},
         citations: {}
-      }
+      },
+      page: 1,
+      perPage: 10,
+      loading: false,
+      hasMore: true
     }
   },
   async created() {
@@ -99,41 +118,69 @@ const AuthorProfile = {
       }
     },
     async fetchAuthorWorks() {
+      if (this.loading || !this.hasMore) return;
+      
+      this.loading = true;
       try {
         const response = await axios.get('https://api.openalex.org/works', {
           params: {
             filter: `author.id:${this.authorId}`,
             sort: 'publication_date:desc',
-            per_page: 5
+            per_page: this.perPage,
+            page: this.page
           }
         });
-        this.works = response.data.results;
+        
+        const newWorks = response.data.results;
+        this.works = [...this.works, ...newWorks];
+        this.hasMore = newWorks.length === this.perPage;
+        this.page += 1;
       } catch (err) {
         console.error(err);
+      } finally {
+        this.loading = false;
       }
     },
     async fetchYearlyStats() {
       try {
-        const response = await axios.get('https://api.openalex.org/works', {
+        // First fetch works count by year
+        const worksResponse = await axios.get('https://api.openalex.org/works', {
           params: {
             filter: `author.id:${this.authorId}`,
             group_by: 'publication_year',
             per_page: 100
           }
         });
+
+        // Then fetch citations by year
+        const citationsResponse = await axios.get('https://api.openalex.org/works', {
+          params: {
+            filter: `author.id:${this.authorId}`,
+            group_by: 'publication_year',
+            select: 'cited_by_count',
+            per_page: 100
+          }
+        });
         
-        const data = response.data.group_by;
         const currentYear = new Date().getFullYear();
         const lastTenYears = Array.from({length: 10}, (_, i) => currentYear - i).reverse();
         
+        // Initialize yearly stats
         lastTenYears.forEach(year => {
           this.yearlyStats.works[year] = 0;
           this.yearlyStats.citations[year] = 0;
         });
 
-        data.forEach(item => {
+        // Process works data
+        worksResponse.data.group_by.forEach(item => {
           if (lastTenYears.includes(parseInt(item.key))) {
             this.yearlyStats.works[item.key] = item.count;
+          }
+        });
+
+        // Process citations data
+        citationsResponse.data.group_by.forEach(item => {
+          if (lastTenYears.includes(parseInt(item.key))) {
             this.yearlyStats.citations[item.key] = item.cited_by_count || 0;
           }
         });
@@ -211,6 +258,12 @@ const AuthorProfile = {
         data: chartConfig.citations,
         options: chartOptions
       });
+    },
+    async handleScroll(e) {
+      const element = e.target;
+      if (element.scrollHeight - element.scrollTop - element.clientHeight < 100) {
+        await this.fetchAuthorWorks();
+      }
     }
   },
   beforeUnmount() {
