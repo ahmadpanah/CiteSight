@@ -10,14 +10,18 @@
 <body>
   <div id="app"></div>
   
-  <!-- Load Vue 3 from CDN -->
+  <!-- Load Vue 3 and Axios from CDN -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <!-- Load Axios from CDN -->
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   
-  <!-- Load our components -->
-  <script src="author-search.js"></script>
+  <!-- Load config first -->
+  <script src="config.js"></script>
+  
+  <!-- Load components -->
   <script src="author-profile.js"></script>
+  <script src="author-search.js"></script>
+  
+  <!-- Load main app last -->
   <script src="app.js"></script>
 </body>
 </html>

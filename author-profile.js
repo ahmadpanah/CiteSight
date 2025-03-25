@@ -1,5 +1,3 @@
-const OPENALEX_EMAIL = 'your-email@example.com'; // Replace with your email
-
 const AuthorProfile = {
   template: `
     <div class="author-profile" v-if="author" @scroll="handleScroll">
@@ -114,7 +112,7 @@ const AuthorProfile = {
       try {
         const response = await axios.get(`https://api.openalex.org/authors/${this.authorId}`, {
           params: {
-            'mailto': OPENALEX_EMAIL
+            'mailto': CONFIG.OPENALEX_EMAIL
           }
         });
         this.author = response.data;
@@ -134,7 +132,7 @@ const AuthorProfile = {
             sort: 'publication_date:desc',
             per_page: this.perPage,
             page: this.page,
-            'mailto': OPENALEX_EMAIL
+            'mailto': CONFIG.OPENALEX_EMAIL
           }
         });
         
@@ -156,7 +154,7 @@ const AuthorProfile = {
             filter: `author.id:${this.authorId}`,
             group_by: 'publication_year',
             per_page: 100,
-            'mailto': OPENALEX_EMAIL
+            'mailto': CONFIG.OPENALEX_EMAIL
           }
         });
 
@@ -167,7 +165,7 @@ const AuthorProfile = {
             group_by: 'publication_year',
             select: 'cited_by_count',
             per_page: 100,
-            'mailto': OPENALEX_EMAIL
+            'mailto': CONFIG.OPENALEX_EMAIL
           }
         });
         
