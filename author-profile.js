@@ -1,3 +1,5 @@
+const OPENALEX_EMAIL = 'your-email@example.com'; // Replace with your email
+
 const AuthorProfile = {
   template: `
     <div class="author-profile" v-if="author" @scroll="handleScroll">
@@ -110,7 +112,11 @@ const AuthorProfile = {
   methods: {
     async fetchAuthorData() {
       try {
-        const response = await axios.get(`https://api.openalex.org/authors/${this.authorId}`);
+        const response = await axios.get(`https://api.openalex.org/authors/${this.authorId}`, {
+          params: {
+            'mailto': OPENALEX_EMAIL
+          }
+        });
         this.author = response.data;
       } catch (err) {
         this.error = 'Failed to load author data';
@@ -127,7 +133,8 @@ const AuthorProfile = {
             filter: `author.id:${this.authorId}`,
             sort: 'publication_date:desc',
             per_page: this.perPage,
-            page: this.page
+            page: this.page,
+            'mailto': OPENALEX_EMAIL
           }
         });
         
@@ -148,7 +155,8 @@ const AuthorProfile = {
           params: {
             filter: `author.id:${this.authorId}`,
             group_by: 'publication_year',
-            per_page: 100
+            per_page: 100,
+            'mailto': OPENALEX_EMAIL
           }
         });
 
@@ -158,7 +166,8 @@ const AuthorProfile = {
             filter: `author.id:${this.authorId}`,
             group_by: 'publication_year',
             select: 'cited_by_count',
-            per_page: 100
+            per_page: 100,
+            'mailto': OPENALEX_EMAIL
           }
         });
         

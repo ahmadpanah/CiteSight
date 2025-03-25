@@ -1,3 +1,5 @@
+const OPENALEX_EMAIL = 'your-email@example.com'; // Replace with your email
+
 const AuthorSearch = {
     template: `
       <div class="author-search">
@@ -60,7 +62,8 @@ const AuthorSearch = {
           const response = await axios.get('https://api.openalex.org/authors', {
             params: {
               search: this.searchQuery,
-              per_page: 8
+              per_page: 8,
+              'mailto': OPENALEX_EMAIL
             }
           });
           this.results = response.data.results || [];
