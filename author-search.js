@@ -15,7 +15,10 @@ const AuthorSearch = {
         </div>
         
         <ul v-if="results.length > 0" class="results">
-          <li v-for="author in results" :key="author.id" class="result-item">
+          <li v-for="author in results" 
+              :key="author.id" 
+              class="result-item"
+              @click="selectAuthor(author.id)">
             <div class="author-header">
               <span class="author-name">{{ author.display_name }}</span>
               <span v-if="author.last_known_institution" class="institution">
@@ -71,6 +74,9 @@ const AuthorSearch = {
       debouncedSearch() {
         clearTimeout(this.debounceTimer);
         this.debounceTimer = setTimeout(this.searchAuthors, 500);
+      },
+      selectAuthor(authorId) {
+        this.$emit('select-author', authorId);
       }
     },
     watch: {

@@ -254,3 +254,88 @@ footer a:hover {
   font-size: 18px;
   color: var(--text-primary);
 }
+
+/* Author Profile Styles */
+.author-profile {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.profile-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.profile-header h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-card h3 {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.recent-works {
+  background-color: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.recent-works h3 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.works-list {
+  list-style: none;
+  padding: 0;
+}
+
+.work-item {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.work-item:last-child {
+  border-bottom: none;
+}
+
+.work-item h4 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+}
+
+.work-meta {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.citations {
+  color: var(--accent-color);
+}
