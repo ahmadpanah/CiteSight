@@ -258,13 +258,13 @@ footer a:hover {
 
 /* Author Profile Styles */
 .author-profile {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 2rem;
 }
 
 .profile-header {
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
   text-align: center;
 }
 
@@ -274,62 +274,107 @@ footer a:hover {
   color: var(--text-primary);
 }
 
+.profile-main h2 {
+  font-size: 2.5rem;
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.institution-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--institution-bg);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.institution-icon {
+  margin-right: 0.5rem;
+}
+
 .profile-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
 }
 
 .stat-card {
   background-color: var(--bg-secondary);
   padding: 1.5rem;
-  border-radius: 8px;
-  text-align: center;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
 }
 
-.stat-card h3 {
-  font-size: 1.1rem;
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  font-size: 2rem;
+  margin-right: 1rem;
+}
+
+.stat-content h3 {
+  font-size: 0.9rem;
   color: var(--text-secondary);
-  margin-bottom: 0.5rem;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.stat-card p {
-  font-size: 1.5rem;
+.stat-content p {
+  font-size: 1.8rem;
   font-weight: bold;
   color: var(--text-primary);
-  margin: 0;
+  margin: 0.2rem 0 0;
 }
 
 .recent-works {
   background-color: var(--bg-secondary);
-  padding: 1.5rem;
-  border-radius: 8px;
+  padding: 2rem;
+  border-radius: 12px;
 }
 
 .recent-works h3 {
-  margin-bottom: 1rem;
+  margin: 0 0 1.5rem;
+  font-size: 1.4rem;
   color: var(--text-primary);
 }
 
 .works-list {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .work-item {
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 1.2rem;
+  border-radius: 8px;
+  background-color: var(--bg-primary);
+  margin-bottom: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.work-item:hover {
+  transform: translateX(4px);
 }
 
 .work-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
-.work-item h4 {
+.work-content h4 {
   margin: 0 0 0.5rem;
-  color: var(--text-primary);
   font-size: 1.1rem;
+  color: var(--text-primary);
 }
 
 .work-meta {
