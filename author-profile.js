@@ -35,6 +35,17 @@ const AuthorProfile = {
         </div>
       </div>
 
+      <div class="charts-container">
+        <div class="chart-card">
+          <h3>Publications by Year</h3>
+          <canvas ref="worksChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Citations by Year</h3>
+          <canvas ref="citationsChart"></canvas>
+        </div>
+      </div>
+
       <div v-if="works.length" class="recent-works">
         <h3>Recent Publications</h3>
         <ul class="works-list">
@@ -61,13 +72,20 @@ const AuthorProfile = {
     return {
       author: null,
       works: [],
-      error: null
+      error: null,
+      worksChart: null,
+      citationsChart: null,
+      yearlyStats: {
+        works: {},
+        citations: {}
+      }
     }
   },
   async created() {
     if (this.authorId) {
       await this.fetchAuthorData();
       await this.fetchAuthorWorks();
+      await this.fetchYearlyStats();
     }
   },
   methods: {
@@ -93,6 +111,110 @@ const AuthorProfile = {
       } catch (err) {
         console.error(err);
       }
+    },
+    async fetchYearlyStats() {
+      try {
+        const response = await axios.get('https://api.openalex.org/works', {
+          params: {
+            filter: `author.id:${this.authorId}`,
+            group_by: 'publication_year',
+            per_page: 100
+          }
+        });
+        
+        const data = response.data.group_by;
+        const currentYear = new Date().getFullYear();
+        const lastTenYears = Array.from({length: 10}, (_, i) => currentYear - i).reverse();
+        
+        lastTenYears.forEach(year => {
+          this.yearlyStats.works[year] = 0;
+          this.yearlyStats.citations[year] = 0;
+        });
+
+        data.forEach(item => {
+          if (lastTenYears.includes(parseInt(item.key))) {
+            this.yearlyStats.works[item.key] = item.count;
+            this.yearlyStats.citations[item.key] = item.cited_by_count || 0;
+          }
+        });
+
+        this.createCharts();
+      } catch (err) {
+        console.error('Error fetching yearly stats:', err);
+      }
+    },
+
+    createCharts() {
+      const years = Object.keys(this.yearlyStats.works);
+      const worksCounts = Object.values(this.yearlyStats.works);
+      const citationsCounts = Object.values(this.yearlyStats.citations);
+
+      const chartConfig = {
+        works: {
+          labels: years,
+          datasets: [{
+            label: 'Publications',
+            data: worksCounts,
+            backgroundColor: 'rgba(66, 133, 244, 0.2)',
+            borderColor: 'rgba(66, 133, 244, 1)',
+            borderWidth: 2,
+            tension: 0.4
+          }]
+        },
+        citations: {
+          labels: years,
+          datasets: [{
+            label: 'Citations',
+            data: citationsCounts,
+            backgroundColor: 'rgba(251, 188, 4, 0.2)',
+            borderColor: 'rgba(251, 188, 4, 1)',
+            borderWidth: 2,
+            tension: 0.4
+          }]
+        }
+      };
+
+      const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      };
+
+      if (this.worksChart) this.worksChart.destroy();
+      if (this.citationsChart) this.citationsChart.destroy();
+
+      this.worksChart = new Chart(this.$refs.worksChart, {
+        type: 'line',
+        data: chartConfig.works,
+        options: chartOptions
+      });
+
+      this.citationsChart = new Chart(this.$refs.citationsChart, {
+        type: 'line',
+        data: chartConfig.citations,
+        options: chartOptions
+      });
     }
+  },
+  beforeUnmount() {
+    if (this.worksChart) this.worksChart.destroy();
+    if (this.citationsChart) this.citationsChart.destroy();
   }
 };
