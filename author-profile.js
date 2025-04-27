@@ -168,29 +168,6 @@ const AuthorProfile = {
     },
     async fetchYearlyStats() {
       try {
-        const [worksResponse, citationsResponse] = await Promise.all([
-          axios.get('https://api.openalex.org/works', {
-            params: {
-              filter: `author.id:${this.authorId}`,
-              group_by: 'publication_year',
-              per_page: 100
-            },
-            headers: {
-              'User-Agent': `CiteSight/${CONFIG.OPENALEX_EMAIL}`
-            }
-          }),
-          axios.get('https://api.openalex.org/works', {
-            params: {
-              filter: `author.id:${this.authorId}`,
-              group_by: 'publication_year',
-              per_page: 100
-            },
-            headers: {
-              'User-Agent': `CiteSight/${CONFIG.OPENALEX_EMAIL}`
-            }
-          })
-        ]);
-
         const currentYear = new Date().getFullYear();
         const lastTenYears = Array.from({length: 10}, (_, i) => currentYear - i).reverse();
         
@@ -200,30 +177,85 @@ const AuthorProfile = {
           this.yearlyStats.citations[year] = 0;
         });
 
+        // Fetch works data
+        const worksResponse = await axios.get('https://api.openalex.org/works', {
+          params: {
+            filter: `author.id:${this.authorId}`,
+            group_by: 'publication_year',
+            per_page: 100
+          },
+          headers: {
+            'User-Agent': `CiteSight/${CONFIG.OPENALEX_EMAIL}`
+          }
+        });
+
         // Process works data
-        worksResponse.data.group_by.forEach(item => {
-          if (lastTenYears.includes(parseInt(item.key))) {
-            this.yearlyStats.works[item.key] = item.count;
+        if (worksResponse.data && worksResponse.data.group_by) {
+          worksResponse.data.group_by.forEach(item => {
+            const year = parseInt(item.key);
+            if (lastTenYears.includes(year)) {
+              this.yearlyStats.works[year] = item.count;
+            }
+          });
+        }
+
+        // Fetch citations data
+        const citationsResponse = await axios.get('https://api.openalex.org/works', {
+          params: {
+            filter: `cites:${this.authorId}`,
+            group_by: 'publication_year',
+            per_page: 100
+          },
+          headers: {
+            'User-Agent': `CiteSight/${CONFIG.OPENALEX_EMAIL}`
           }
         });
 
         // Process citations data
-        citationsResponse.data.group_by.forEach(item => {
-          if (lastTenYears.includes(parseInt(item.key))) {
-            this.yearlyStats.citations[item.key] = item.cited_by_count || 0;
+        if (citationsResponse.data && citationsResponse.data.group_by) {
+          citationsResponse.data.group_by.forEach(item => {
+            const year = parseInt(item.key);
+            if (lastTenYears.includes(year)) {
+              this.yearlyStats.citations[year] = item.count;
+            }
+          });
+        }
+
+        // If no citations data found, try alternative approach
+        if (Object.values(this.yearlyStats.citations).every(count => count === 0)) {
+          const altCitationsResponse = await axios.get('https://api.openalex.org/works', {
+            params: {
+              filter: `author.id:${this.authorId}`,
+              select: 'publication_year,cited_by_count',
+              per_page: 100
+            },
+            headers: {
+              'User-Agent': `CiteSight/${CONFIG.OPENALEX_EMAIL}`
+            }
+          });
+
+          if (altCitationsResponse.data && altCitationsResponse.data.results) {
+            altCitationsResponse.data.results.forEach(work => {
+              const year = work.publication_year;
+              if (year && lastTenYears.includes(year)) {
+                this.yearlyStats.citations[year] += work.cited_by_count || 0;
+              }
+            });
           }
-        });
+        }
 
         this.createCharts();
       } catch (err) {
         console.error('Error fetching yearly stats:', err);
+        // Initialize charts with zero data if there's an error
+        this.createCharts();
       }
     },
 
     createCharts() {
-      const years = Object.keys(this.yearlyStats.works);
-      const worksCounts = Object.values(this.yearlyStats.works);
-      const citationsCounts = Object.values(this.yearlyStats.citations);
+      const years = Object.keys(this.yearlyStats.works).sort((a, b) => a - b);
+      const worksCounts = years.map(year => this.yearlyStats.works[year] || 0);
+      const citationsCounts = years.map(year => this.yearlyStats.citations[year] || 0);
 
       const chartConfig = {
         works: {
@@ -234,7 +266,8 @@ const AuthorProfile = {
             backgroundColor: 'rgba(66, 133, 244, 0.2)',
             borderColor: 'rgba(66, 133, 244, 1)',
             borderWidth: 2,
-            tension: 0.4
+            tension: 0.4,
+            fill: true
           }]
         },
         citations: {
@@ -245,7 +278,8 @@ const AuthorProfile = {
             backgroundColor: 'rgba(251, 188, 4, 0.2)',
             borderColor: 'rgba(251, 188, 4, 1)',
             borderWidth: 2,
-            tension: 0.4
+            tension: 0.4,
+            fill: true
           }]
         }
       };
@@ -256,6 +290,15 @@ const AuthorProfile = {
         plugins: {
           legend: {
             display: false
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.parsed.y.toLocaleString()}`;
+              }
+            }
           }
         },
         scales: {
@@ -263,6 +306,11 @@ const AuthorProfile = {
             beginAtZero: true,
             grid: {
               color: 'rgba(0, 0, 0, 0.1)'
+            },
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString();
+              }
             }
           },
           x: {
